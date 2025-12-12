@@ -12,7 +12,7 @@ WHITE='\033[0;37m'
 BOLD='\033[1m'
 UNDERLINE='\033[4m'
 RESET='\033[0m'
-
+cd "$(dirname "$0")"
 #
 #
 #
@@ -24,88 +24,42 @@ getQuery () {
 }
 
 
-API_REGEX="$(dirname "${BASH_SOURCE[0]}")/../regex/api_regex.json"
-get_severity_color() {
-    local key=$1
-    case "$key" in
-        google_api|firebase|amazon_aws_access_key_id|amazon_mws_auth_toke|facebook_access_token|authorization_basic|authorization_bearer|authorization_api|mailgun_api_key|twilio_api_key|twilio_account_sid|twilio_app_sid|paypal_braintree_access_token|square_oauth_secret|square_access_token|stripe_standard_api|stripe_restricted_api|github_access_token|SSH_privKey|Heroku API KEY|possible_Creds)
-            echo -e "${RED}"  # High severity
-            ;;
-        json_web_token|slack_token)
-            echo -e "${YELLOW}" # Medium severity
-            ;;
-        *)
-            echo -e "${BLUE}"    # Informational
-            ;;
-    esac
-}
 
-print_match() {
-    local key=$1
-    local matches=$2
-    local file=$3
-    local severity_color=$(get_severity_color "$key")
-
-    if [[ -n "$matches" ]]; then
-        echo -e "  ${severity_color}[+]${RESET} ${CYAN}Matches for ${severity_color}[$key]${RESET} in ${GREEN}$file${RESET}:"
-        echo "$matches" | sed "s/^/    ${severity_color}|->${RESET} /"
-    fi
-}
-
-scanRegex_file () {
+scanRegex_file() {
     local target_file="$1"
     local total_matches=0
-    local findings=""
 
-    API_REGEX="$(dirname "${BASH_SOURCE[0]}")/../regex/api_regex.json"
-    PATHS_REGEX="$(dirname "${BASH_SOURCE[0]}")/../regex/paths_regex.json"
+    local API_REGEX="$(dirname "${BASH_SOURCE[0]}")/../regex/api_regex.json"
 
+    echo "[*] Scanning file: $target_file"
+    echo ""
+
+    local keys
     keys=$(jq -r 'keys[]' "$API_REGEX")
+
     for key in $keys; do
+        local regex
         regex=$(jq -r --arg k "$key" '.[$k]' "$API_REGEX")
+
+        local matches
         matches=$(grep -oP "$regex" "$target_file" | sort -u)
+
         if [[ -n "$matches" ]]; then
-            findings+="$(print_match "$key" "$matches" "$target_file")\n"
-            total_matches=$((total_matches + $(echo "$matches" | wc -l)))
+            local count
+            count=$(echo "$matches" | wc -l)
+
+            echo "[+] Key: $key"
+            echo "$matches"
+            echo ""
+
+            total_matches=$((total_matches + count))
         fi
     done
 
-    keys=$(jq -r 'keys[]' "$PATHS_REGEX")
-    for key in $keys; do
-        regex=$(jq -r --arg k "$key" '.[$k]' "$PATHS_REGEX")
-        matches=$(grep -oP "$regex" "$target_file" | sort -u)
-        if [[ -n "$matches" ]]; then
-            findings+="$(print_match "$key" "$matches" "$target_file")\n"
-            total_matches=$((total_matches + $(echo "$matches" | wc -l)))
-        fi
-    done
-
-    if [[ $total_matches -gt 0 ]]; then
-        echo -e "${BLUE}[*]${RESET} Scanning file: ${GREEN}$target_file${RESET}"
-        echo -e "$findings"
-        echo -e "${BLUE}[*]${RESET} Scan complete for file: ${GREEN}$target_file${RESET}"
-        echo -e "${BLUE}[*]${RESET} Total matches found: ${RED}$total_matches${RESET}"
-    fi
+    echo "[*] Total matches found: $total_matches"
+    echo "[*] Scan complete."
 }
 
-scanRegex_dir() {
-    local target="$1"
-    local total_files=0
-
-    if [[ -d "$target" ]]; then
-        echo -e "${BLUE}[*]${RESET} Scanning directory: ${GREEN}$target${RESET}"
-        for item in "$target"/*; do
-            if [[ -f "$item" ]]; then
-                scanRegex_file "$item"
-                total_files=$((total_files + 1))
-            fi
-        done
-        echo -e "${BLUE}[*]${RESET} Scan complete for directory: ${GREEN}$target${RESET}"
-        echo -e "${BLUE}[*]${RESET} Total files scanned: ${RED}$total_files${RESET}"
-    elif [[ -f "$target" ]]; then
-        scanRegex_file "$target"
-    fi
-}
 
 
 
@@ -117,17 +71,20 @@ if [[ $# -eq 0 || "$1" == "--help" ]]; then
     
 
   echo -e "${MAGENTA}  [options]${RESET}"
-  echo "  --secrets     check for existed regex in file" 
-  echo "  --juicy       Can contain juicy information"
+  echo "        --secrets     check for existed regex in file" 
+  echo "        --juicy       Can contain juicy information [md5, sha, other encryption types]"
 
   echo -e "${MAGENTA}  [target]${RESET}"
-  echo -e "  -url <url>        JavaScript endpoint extract"
-  echo -e "  -f   <file>       Search specific file"
-  echo -e "  -d   <directory>  Search directory recursively"  
-  echo -e "  -d .              Current directory"
+  echo -e "         -url <url>        JavaScript endpoint extract"
+  echo -e "         -f   <file>       file contain Java script | List of Java script endpoints"
+  echo -e "         -d   <directory>  Search directory recursively"  
 
   exit 0
 fi
+
+
+
+
 
 
 case "$1" in
@@ -167,7 +124,14 @@ case "$1" in
                 URL=$2
                 if [[ $URL =~ ^https?://.*\.js$ ]]; then
                 # /////////////////////////////////// 
-                 
+
+
+                    python3 ../pylib/getContent.py -u $URL > tmp_file                   
+                    scanRegex_file tmp_file
+                    rm  tmp_file
+                    
+
+
                 # /////////////////////////////////// 
                 else
                     echo "Wrong url form !"
