@@ -13,13 +13,13 @@ RESET='\033[0m'
 
 function banner() {
     echo ""
-    echo "  quevy v0.1"
+    echo "  gex v0.1"
     echo "  weekeyv/github"
 }
 
 function show_help() {
     banner
-    echo "  Usage: ./quevy [MODULE]"
+    echo "  Usage: ./gex [MODULE]"
     echo ""
     echo -e "${RED}  Modules${RESET}"
     echo ""
