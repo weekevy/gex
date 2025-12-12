@@ -25,14 +25,13 @@ extract_parameter () {
 
 
 if [[ $# -eq 0 || "$1" == "--help" ]]; then
-  echo -e "${YELLOW}  Usage: ./quevy urls [--module] <target> ${RESET}"
+  echo -e "${YELLOW}  Usage: ./gex.sh urls [--module] <target> ${RESET}"
     
   echo -e "${MAGENTA}  [options]${RESET}"
-  echo "  --path   find importent path [api]" 
-  echo "  --param   extract parametrazie urla "
+  echo "  --path    Find importent path [api]" 
+  echo "  --param   xtract URLs with parameters"
 
   echo -e "${MAGENTA}  [target]${RESET}"
-  echo -e "  -url <url>        JavaScript endpoint extract"
   echo -e "  -f   <file>       Search specific file"
   echo -e "  -d   <directory>  Search directory recursively"  
   echo -e "  -d .              Current directory"
@@ -43,7 +42,6 @@ fi
 
 case "$1" in
     --param)
-        echo "You are using [js] module"
         shift
         case "$1" in
             -f)
