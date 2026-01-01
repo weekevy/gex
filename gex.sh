@@ -11,22 +11,22 @@ BOLD='\033[1m'
 UNDERLINE='\033[4m'
 RESET='\033[0m'
 
-function banner() {
+banner() {
     echo ""
     echo "  gex v0.1"
     echo "  weekeyv/github"
 }
 
-function show_help() {
+show_help() {
     banner
     echo "  Usage: ./gex [MODULE]"
     echo ""
     echo -e "${RED}  Modules${RESET}"
     echo ""
-
     echo "  js       JavaScript tools pack"
     echo "  urls     Urls tools pack"
     echo "  reg      Extract specific things with using regular expression"
+
 
     echo ""
     echo ""
@@ -35,7 +35,7 @@ function show_help() {
 }
 echo ""
 
-function show_module_error() {
+show_module_error() {
     banner
     echo ""
     echo -e "${RED}  Modules${RESET}"
