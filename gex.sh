@@ -73,8 +73,9 @@ function main() {
         echo "Error: Module '$MODULE' does not exist."
         echo ""
         echo "Available modules:"
-        echo "  regex"
-        echo "  extract"
+        echo "  js"
+        echo "  urls"
+        echo "  reg"
         exit 1
     fi
 }
