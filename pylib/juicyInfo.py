@@ -1,0 +1,70 @@
+
+
+import re
+import json
+import requests
+
+regex_str = r"""
+
+  (?:"|')                               # Start newline delimiter
+
+  (
+    ((?:[a-zA-Z]{1,10}://|//)           # Match a scheme [a-Z]*1-10 or //
+    [^"'/]{1,}\.                        # Match a domainname (any character + dot)
+    [a-zA-Z]{2,}[^"']{0,})              # The domainextension and/or path
+
+    |
+
+    ((?:/|\.\./|\./)                    # Start with /,../,./
+    [^"'><,;| *()(%%$^/\\\[\]]          # Next character can't be...
+    [^"'><,;|()]{1,})                   # Rest of the characters can't be
+
+    |
+
+    ([a-zA-Z0-9_\-/]{1,}/               # Relative endpoint with /
+    [a-zA-Z0-9_\-/.]{1,}                # Resource name
+    \.(?:[a-zA-Z]{1,4}|action)          # Rest + extension (length 1-4 or action)
+    (?:[\?|#][^"|']{0,}|))              # ? or # mark with parameters
+
+    |
+
+    ([a-zA-Z0-9_\-/]{1,}/               # REST API (no extension) with /
+    [a-zA-Z0-9_\-/]{3,}                 # Proper REST endpoints usually have 3+ chars
+    (?:[\?|#][^"|']{0,}|))              # ? or # mark with parameters
+
+    |
+
+    ([a-zA-Z0-9_\-]{1,}                 # filename
+    \.(?:php|asp|aspx|jsp|json|
+         action|html|js|txt|xml)        # . + extension
+    (?:[\?|#][^"|']{0,}|))              # ? or # mark with parameters
+
+  )
+
+  (?:"|')                               # End newline delimiter
+
+"""
+
+
+def scan_js_endpoint(url, timeout=10):
+    try:
+        r = requests.get(url, timeout=timeout, verify=False)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"[!] Request failed: {e}")
+        return
+
+    matches = re.findall(regex_str, r.text, re.VERBOSE)
+
+    found = set()
+    for match in matches:
+        for item in match:
+            if item:
+                found.add(item)
+
+    if found:
+        print(f"[+] Found {len(found)} matches in {url}")
+        for i in sorted(found):
+            print(i)
+    else:
+        print("[-] No matches found")
